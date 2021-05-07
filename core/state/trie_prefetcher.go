@@ -279,7 +279,7 @@ func (sf *subfetcher) loop() {
 	defer close(sf.term)
 
 	// Start by opening the trie and stop processing if it fails
-	trie, err := sf.db.OpenTrie(sf.root)
+	trie, err := NewAsync(sf.root, sf.db) // sf.db.OpenTrie(sf.root)
 	if err != nil {
 		log.Warn("Trie prefetcher failed opening trie", "root", sf.root, "err", err)
 		return

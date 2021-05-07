@@ -18,6 +18,7 @@ package trie
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -34,7 +35,7 @@ import (
 //
 // SecureTrie is not safe for concurrent use.
 type SecureTrie struct {
-	trie             Trie
+	trie             AsyncTrie
 	hashKeyBuf       [common.HashLength]byte
 	secKeyCache      map[string][]byte
 	secKeyCacheOwner *SecureTrie // Pointer to self, replace the key cache on mismatch
@@ -55,10 +56,12 @@ func NewSecure(root common.Hash, db *Database) (*SecureTrie, error) {
 	if db == nil {
 		panic("trie.NewSecure called without a database")
 	}
-	trie, err := New(root, db)
+	trie, err := NewAsync(root, db)
 	if err != nil {
 		return nil, err
 	}
+	trie.cacheLock = &sync.RWMutex{}
+	trie.inProgressLock = &sync.RWMutex{}
 	return &SecureTrie{trie: *trie}, nil
 }
 
