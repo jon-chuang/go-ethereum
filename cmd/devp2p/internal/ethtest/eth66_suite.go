@@ -76,9 +76,14 @@ func (s *Suite) TestGetBlockHeaders_66(t *utesting.T) {
 		},
 	}
 	// write message
-	headers := s.getBlockHeaders66(t, conn, req, req.RequestId)
+	headers, err := s.getBlockHeaders66(conn, req, req.RequestId)
+	if err != nil {
+		t.Fatalf("could not get block headers: %v", err)
+	}
 	// check for correct headers
-	headersMatch(t, s.chain, headers)
+	if !headersMatch(t, s.chain, headers) {
+		t.Fatal("received wrong header(s)")
+	}
 }
 
 // TestSimultaneousRequests_66 sends two simultaneous `GetBlockHeader` requests
@@ -86,9 +91,8 @@ func (s *Suite) TestGetBlockHeaders_66(t *utesting.T) {
 // headers per request.
 func (s *Suite) TestSimultaneousRequests_66(t *utesting.T) {
 	// create two connections
-	conn1, conn2 := s.setupConnection66(t), s.setupConnection66(t)
-	defer conn1.Close()
-	defer conn2.Close()
+	conn := s.setupConnection66(t)
+	defer conn.Close()
 	// create two requests
 	req1 := &eth.GetBlockHeadersPacket66{
 		RequestId: 111,
@@ -112,15 +116,30 @@ func (s *Suite) TestSimultaneousRequests_66(t *utesting.T) {
 			Reverse: false,
 		},
 	}
-	// wait for headers for first request
-	headerChan := make(chan BlockHeaders, 1)
-	go func(headers chan BlockHeaders) {
-		headers <- s.getBlockHeaders66(t, conn1, req1, req1.RequestId)
-	}(headerChan)
-	// check headers of second request
-	headersMatch(t, s.chain, s.getBlockHeaders66(t, conn2, req2, req2.RequestId))
-	// check headers of first request
-	headersMatch(t, s.chain, <-headerChan)
+	// write first request
+	if err := conn.write66(req1, GetBlockHeaders{}.Code()); err != nil {
+		t.Fatalf("failed to write to connection: %v", err)
+	}
+	// write second request
+	if err := conn.write66(req2, GetBlockHeaders{}.Code()); err != nil {
+		t.Fatalf("failed to write to connection: %v", err)
+	}
+	// wait for responses
+	headers1, err := s.waitForBlockHeadersResponse66(conn, req1.RequestId)
+	if err != nil {
+		t.Fatalf("error while waiting for block headers: %v", err)
+	}
+	headers2, err := s.waitForBlockHeadersResponse66(conn, req2.RequestId)
+	if err != nil {
+		t.Fatalf("error while waiting for block headers: %v", err)
+	}
+	// check headers of both responses
+	if !headersMatch(t, s.chain, headers1) {
+		t.Fatalf("wrong header(s) in response to req1: got %v", headers1)
+	}
+	if !headersMatch(t, s.chain, headers2) {
+		t.Fatalf("wrong header(s) in response to req2: got %v", headers2)
+	}
 }
 
 // TestBroadcast_66 tests whether a block announcement is correctly
@@ -199,17 +218,7 @@ func (s *Suite) TestLargeAnnounce_66(t *utesting.T) {
 		sendConn.Close()
 	}
 	// Test the last block as a valid block
-	sendConn, receiveConn := s.setupConnection66(t), s.setupConnection66(t)
-	defer sendConn.Close()
-	defer receiveConn.Close()
-
-	s.testAnnounce66(t, sendConn, receiveConn, blocks[3])
-	// update test suite chain
-	s.chain.blocks = append(s.chain.blocks, s.fullChain.blocks[nextBlock])
-	// wait for client to update its chain
-	if err := receiveConn.waitForBlock66(s.fullChain.blocks[nextBlock]); err != nil {
-		t.Fatal(err)
-	}
+	s.sendNextBlock66(t)
 }
 
 func (s *Suite) TestOldAnnounce_66(t *utesting.T) {
@@ -377,26 +386,31 @@ func (s *Suite) TestZeroRequestID_66(t *utesting.T) {
 			Amount: 2,
 		},
 	}
-	headersMatch(t, s.chain, s.getBlockHeaders66(t, conn, req, req.RequestId))
+	headers, err := s.getBlockHeaders66(conn, req, req.RequestId)
+	if err != nil {
+		t.Fatalf("could not get block headers: %v", err)
+	}
+	if !headersMatch(t, s.chain, headers) {
+		t.Fatal("received wrong header(s)")
+	}
 }
 
 // TestSameRequestID_66 sends two requests with the same request ID
 // concurrently to a single node.
 func (s *Suite) TestSameRequestID_66(t *utesting.T) {
 	conn := s.setupConnection66(t)
-	defer conn.Close()
-	// create two separate requests with same ID
+	// create two requests with the same request ID
 	reqID := uint64(1234)
-	req1 := &eth.GetBlockHeadersPacket66{
+	request1 := &eth.GetBlockHeadersPacket66{
 		RequestId: reqID,
 		GetBlockHeadersPacket: &eth.GetBlockHeadersPacket{
 			Origin: eth.HashOrNumber{
-				Number: 0,
+				Number: 1,
 			},
 			Amount: 2,
 		},
 	}
-	req2 := &eth.GetBlockHeadersPacket66{
+	request2 := &eth.GetBlockHeadersPacket66{
 		RequestId: reqID,
 		GetBlockHeadersPacket: &eth.GetBlockHeadersPacket{
 			Origin: eth.HashOrNumber{
@@ -405,12 +419,26 @@ func (s *Suite) TestSameRequestID_66(t *utesting.T) {
 			Amount: 2,
 		},
 	}
-	// send requests concurrently
-	go func() {
-		headersMatch(t, s.chain, s.getBlockHeaders66(t, conn, req2, reqID))
-	}()
-	// check response from first request
-	headersMatch(t, s.chain, s.getBlockHeaders66(t, conn, req1, reqID))
+	// write the first request
+	err := conn.write66(request1, GetBlockHeaders{}.Code())
+	if err != nil {
+		t.Fatalf("could not write to connection: %v", err)
+	}
+	// perform second request
+	headers2, err := s.getBlockHeaders66(conn, request2, reqID)
+	if err != nil {
+		t.Fatalf("could not get block headers: %v", err)
+		return
+	}
+	// wait for response to first request
+	headers1, err := s.waitForBlockHeadersResponse66(conn, reqID)
+	if err != nil {
+		t.Fatalf("could not get BlockHeaders response: %v", err)
+	}
+	// check if headers match
+	if !headersMatch(t, s.chain, headers1) || !headersMatch(t, s.chain, headers2) {
+		t.Fatal("received wrong header(s)")
+	}
 }
 
 // TestLargeTxRequest_66 tests whether a node can fulfill a large GetPooledTransactions
@@ -483,8 +511,8 @@ func (s *Suite) TestNewPooledTxs_66(t *utesting.T) {
 				t.Fatalf("unexpected number of txs requested: wanted %d, got %d", len(hashes), len(msg))
 			}
 			return
-		case *NewPooledTransactionHashes:
-			// ignore propagated txs from old tests
+		case *NewPooledTransactionHashes, *NewBlock, *NewBlockHashes:
+			// ignore propagated txs and blocks from old tests
 			continue
 		default:
 			t.Fatalf("unexpected %s", pretty.Sdump(msg))

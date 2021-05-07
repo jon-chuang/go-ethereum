@@ -141,16 +141,6 @@ func (gs *generatorStats) Log(msg string, root common.Hash, marker []byte) {
 	log.Info(msg, ctx...)
 }
 
-// ClearSnapshotMarker sets the snapshot marker to zero, meaning that snapshots
-// are not usable.
-func ClearSnapshotMarker(diskdb ethdb.KeyValueStore) {
-	batch := diskdb.NewBatch()
-	journalProgress(batch, []byte{}, nil)
-	if err := batch.Write(); err != nil {
-		log.Crit("Failed to write initialized state marker", "err", err)
-	}
-}
-
 // generateSnapshot regenerates a brand new snapshot based on an existing state
 // database and head block asynchronously. The snapshot is returned immediately
 // and generation is continued in the background until done.
@@ -368,7 +358,7 @@ func (dl *diskLayer) proveRange(stats *generatorStats, root common.Hash, prefix 
 	}
 	// Verify the snapshot segment with range prover, ensure that all flat states
 	// in this range correspond to merkle trie.
-	_, _, _, cont, err := trie.VerifyRangeProof(root, origin, last, keys, vals, proof)
+	cont, err := trie.VerifyRangeProof(root, origin, last, keys, vals, proof)
 	return &proofResult{
 			keys:     keys,
 			vals:     vals,
