@@ -279,7 +279,7 @@ func (sf *subfetcher) loop() {
 	defer close(sf.term)
 
 	// Start by opening the trie and stop processing if it fails
-	trie, err := NewAsync(sf.root, sf.db) // sf.db.OpenTrie(sf.root)
+	trie, err := sf.db.OpenTrie(sf.root)
 	if err != nil {
 		log.Warn("Trie prefetcher failed opening trie", "root", sf.root, "err", err)
 		return
@@ -316,7 +316,7 @@ func (sf *subfetcher) loop() {
 					if _, ok := sf.seen[taskid]; ok {
 						sf.dups++
 					} else {
-						sf.trie.TryGet(task)
+						sf.trie.trie.GetAsync(task)
 						sf.seen[taskid] = struct{}{}
 					}
 				}
