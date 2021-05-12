@@ -75,6 +75,10 @@ func (t *SecureTrie) Get(key []byte) []byte {
 	return res
 }
 
+func (t *SecureTrie) TryGetAsync(key []byte) chan GetReturnType {
+	return t.trie.TryGetAsync(t.hashKey(key))
+}
+
 // TryGet returns the value for key stored in the trie.
 // The value bytes must not be modified by the caller.
 // If a node was not found in the database, a MissingNodeError is returned.

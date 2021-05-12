@@ -316,7 +316,7 @@ func (sf *subfetcher) loop() {
 					if _, ok := sf.seen[taskid]; ok {
 						sf.dups++
 					} else {
-						sf.trie.trie.GetAsync(task)
+						sf.trie.TryGetAsync(task)
 						sf.seen[taskid] = struct{}{}
 					}
 				}

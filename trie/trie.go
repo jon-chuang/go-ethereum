@@ -110,6 +110,17 @@ func (t *Trie) Get(key []byte) []byte {
 	return res
 }
 
+func (t *Trie) TryGetAsync(key []byte) chan GetReturnType {
+	retChan := make(chan GetReturnType)
+	defer func() {
+		res, err := t.TryGet(key)
+		retChan <- GetReturnType{
+			res, err,
+		}
+	}()
+	return retChan
+}
+
 // TryGet returns the value for key stored in the trie.
 // The value bytes must not be modified by the caller.
 // If a node was not found in the database, a MissingNodeError is returned.

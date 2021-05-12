@@ -25,19 +25,22 @@ type AsyncTrie struct {
 
 	jobs chan prefetchJobWrapper
 
+	syncComplete chan struct{}
+
 	// we keep track of inserts so that
 	// we know when prefetch fails are legitimate
 	updateDirties map[string]struct{}
 }
 
-type getReturnType struct {
+/// GetReturnType is an exported type
+type GetReturnType struct {
 	value []byte
 	err   error
 }
 
 type trieGetJob struct {
 	key []byte
-	ret chan getReturnType
+	ret chan GetReturnType
 }
 
 type trieDeleteJob struct {
@@ -95,6 +98,13 @@ func NewAsync(root common.Hash, db *Database) (*AsyncTrie, error) {
 	return &at, nil
 }
 
+func (t *AsyncTrie) sync() {
+	t.jobs <- prefetchJobWrapper{
+		trieKillJob{},
+		nil,
+	}
+}
+
 func (t *AsyncTrie) loop() {
 	for prefetchJob := range t.jobs {
 		// We wait until the prefetch thread returns
@@ -107,7 +117,7 @@ func (t *AsyncTrie) loop() {
 				// If node has not been updated, then the get
 				// operation was an error
 				if _, ok := t.updateDirties[string(j.key)]; !ok {
-					j.ret <- getReturnType{nil, err}
+					j.ret <- GetReturnType{nil, err}
 				}
 
 			case trieDeleteJob:
@@ -123,10 +133,12 @@ func (t *AsyncTrie) loop() {
 
 		// If prefetch was a success
 		switch j := prefetchJob.job.(type) {
+		case trieKillJob:
+			t.syncComplete <- struct{}{}
 		case trieGetJob:
 			// This op should return immediately
 			node, err := t.trie.TryGet(j.key)
-			j.ret <- getReturnType{node, err}
+			j.ret <- GetReturnType{node, err}
 		case trieDeleteJob:
 			// This op should return immediately
 			err := t.trie.TryDelete(j.key)
@@ -157,11 +169,12 @@ func (t *AsyncTrie) prefetchAsyncIO(prefetchSuccess chan error, origNode node, k
 	prefetchSuccess <- t.prefetchConcurrent(origNode, key, 0)
 }
 
-func (t *AsyncTrie) GetAsync(origNode node, key []byte) chan getReturnType {
+func (t *AsyncTrie) TryGetAsync(key []byte) chan GetReturnType {
 	prefetchSuccess := make(chan error)
-	go t.prefetchAsyncIO(prefetchSuccess, origNode, key)
 
-	ret := make(chan getReturnType)
+	go t.prefetchAsyncIO(prefetchSuccess, t.trie.root, key)
+
+	ret := make(chan GetReturnType)
 
 	t.jobs <- prefetchJobWrapper{
 		job:             trieGetJob{key: key, ret: ret},
@@ -191,7 +204,6 @@ func (t *AsyncTrie) tryGet(origNode node, key []byte, pos int) (value []byte, ne
 	case *fullNode:
 		value, newnode, didResolve, err = t.tryGet(n.Children[key[pos]], key, pos+1)
 		if err == nil && didResolve {
-			n = n.copy()
 			n.Children[key[pos]] = newnode
 		}
 		return value, n, didResolve, err
