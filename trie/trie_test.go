@@ -51,6 +51,12 @@ func newEmpty() *Trie {
 	return trie
 }
 
+// Used for testing
+func newEmptyAsync() *AsyncTrie {
+	trie, _ := NewAsync(common.Hash{}, NewDatabase(memorydb.New()))
+	return trie
+}
+
 func TestEmptyTrie(t *testing.T) {
 	var trie Trie
 	res := trie.Hash()
@@ -471,12 +477,27 @@ func TestRandom(t *testing.T) {
 	}
 }
 
-func BenchmarkGet(b *testing.B)      { benchGet(b, false) }
-func BenchmarkGetDB(b *testing.B)    { benchGet(b, true) }
-func BenchmarkUpdateBE(b *testing.B) { benchUpdate(b, binary.BigEndian) }
-func BenchmarkUpdateLE(b *testing.B) { benchUpdate(b, binary.LittleEndian) }
+func BenchmarkGet(b *testing.B)   { benchGet(b, false) }
+func BenchmarkGetDB(b *testing.B) { benchGet(b, true) }
 
-const benchElemCount = 20000
+func BenchmarkGetDBAsync(b *testing.B) { benchGetAsync(b, false) }
+
+func BenchmarkGetDBAsyncPrefetch(b *testing.B) { benchGetAsync(b, true) }
+func BenchmarkUpdateBE(b *testing.B)           { benchUpdate(b, binary.BigEndian) }
+func BenchmarkUpdateLE(b *testing.B)           { benchUpdate(b, binary.LittleEndian) }
+
+const benchElemCount = 2000000
+
+var hashKeyBuf = make([]byte, common.HashLength)
+
+func hashKey(key []byte) []byte {
+	h := newHasher(false)
+	h.sha.Reset()
+	h.sha.Write(key)
+	h.sha.Read(hashKeyBuf[:])
+	returnHasherToPool(h)
+	return hashKeyBuf[:]
+}
 
 func benchGet(b *testing.B, commit bool) {
 	trie := new(Trie)
@@ -485,18 +506,19 @@ func benchGet(b *testing.B, commit bool) {
 		trie, _ = New(common.Hash{}, tmpdb)
 	}
 	k := make([]byte, 32)
+	v := make([]byte, 256)
 	for i := 0; i < benchElemCount; i++ {
-		binary.LittleEndian.PutUint64(k, uint64(i))
-		trie.Update(k, k)
+		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
+		trie.Update(hashKey(k), v)
 	}
-	binary.LittleEndian.PutUint64(k, benchElemCount/2)
 	if commit {
 		trie.Commit(nil)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		trie.Get(k)
+		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
+		trie.Get(hashKey(k))
 	}
 	b.StopTimer()
 
@@ -505,6 +527,45 @@ func benchGet(b *testing.B, commit bool) {
 		ldb.Close()
 		os.RemoveAll(ldb.Path())
 	}
+}
+
+func benchGetAsync(b *testing.B, prefetch bool) {
+	trie := new(Trie)
+	_, diskdb := diskDB()
+	tmpdb := NewDatabase(diskdb)
+	trie, _ = New(common.Hash{}, tmpdb)
+
+	k := make([]byte, 32)
+	v := make([]byte, 256)
+	for i := 0; i < benchElemCount; i++ {
+		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
+		trie.Update(hashKey(k), v)
+	}
+	hash := trie.Hash()
+	trie.Commit(nil)
+
+	trieNew, _ := NewAsync(hash, trie.db)
+
+	if prefetch {
+		for i := 0; i < b.N; i++ {
+			binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
+			trieNew.TryGetAsync(hashKey(k))
+		}
+	}
+	trieNew.sync()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
+		trieNew.TryGetAsync(hashKey(k))
+	}
+	b.StopTimer()
+
+	trieNew.sync()
+
+	ldb := trie.db.diskdb.(*leveldb.Database)
+	ldb.Close()
+	os.RemoveAll(ldb.Path())
 }
 
 func benchUpdate(b *testing.B, e binary.ByteOrder) *Trie {
@@ -1003,6 +1064,144 @@ func benchmarkCommitAfterHashFixedSize(b *testing.B, addresses [][20]byte, accou
 	b.StopTimer()
 }
 
+func BenchmarkUpdateAndHashFixedSizedAndCommit(b *testing.B) {
+	b.Run("10", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(20)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommit(b, acc, add)
+		}
+	})
+	b.Run("100", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(100)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommit(b, acc, add)
+		}
+	})
+
+	b.Run("1K", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(1000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommit(b, acc, add)
+		}
+	})
+	b.Run("10K", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(10000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommit(b, acc, add)
+		}
+	})
+	b.Run("100K", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(100000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommit(b, acc, add)
+		}
+	})
+	b.Run("1M", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(1000000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommit(b, acc, add)
+		}
+	})
+}
+func benchmarkUpdateAndHashFixedSizedAndCommit(b *testing.B, addresses [][20]byte, accounts [][]byte) {
+	b.ReportAllocs()
+	trie := newEmpty()
+
+	for i := 0; i < len(addresses); i++ {
+		trie.TryUpdate(crypto.Keccak256(addresses[i][:]), accounts[i])
+	}
+	hash := trie.Hash()
+	trie.Commit(nil)
+
+	b.StartTimer()
+	newTrie, _ := New(hash, trie.db)
+
+	for i := 0; i < len(addresses); i++ {
+		newTrie.TryUpdate(crypto.Keccak256(addresses[i][:]), accounts[i])
+	}
+	// Insert the accounts into the trie and hash it
+
+	newTrie.Hash()
+	newTrie.Commit(nil)
+	b.StopTimer()
+}
+
+func BenchmarkUpdateAndHashFixedSizedAndCommitAsync(b *testing.B) {
+	b.Run("10", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(20)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommitAsync(b, acc, add)
+		}
+	})
+	b.Run("100", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(100)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommitAsync(b, acc, add)
+		}
+	})
+
+	b.Run("1K", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(1000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommitAsync(b, acc, add)
+		}
+	})
+	b.Run("10K", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(10000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommitAsync(b, acc, add)
+		}
+	})
+	b.Run("100K", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(100000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommitAsync(b, acc, add)
+		}
+	})
+	b.Run("1M", func(b *testing.B) {
+		b.StopTimer()
+		acc, add := makeAccounts(1000000)
+		for i := 0; i < b.N; i++ {
+			benchmarkUpdateAndHashFixedSizedAndCommitAsync(b, acc, add)
+		}
+	})
+}
+
+func benchmarkUpdateAndHashFixedSizedAndCommitAsync(b *testing.B, addresses [][20]byte, accounts [][]byte) {
+	b.ReportAllocs()
+	trie := newEmptyAsync()
+
+	for i := 0; i < len(addresses); i++ {
+		trie.TryUpdate(crypto.Keccak256(addresses[i][:]), accounts[i])
+	}
+	hash := trie.Hash()
+	trie.Commit(nil)
+
+	b.StartTimer()
+	newTrie, _ := NewAsync(hash, trie.db)
+
+	for i := 0; i < len(addresses); i++ {
+		newTrie.TryUpdateAsync(crypto.Keccak256(addresses[i][:]), accounts[i])
+	}
+	newTrie.sync()
+	// Insert the accounts into the trie and hash it
+
+	newTrie.Hash()
+	newTrie.Commit(nil)
+	b.StopTimer()
+}
+
 func BenchmarkDerefRootFixedSize(b *testing.B) {
 	b.Run("10", func(b *testing.B) {
 		b.StopTimer()
@@ -1056,6 +1255,11 @@ func benchmarkDerefRootFixedSize(b *testing.B, addresses [][20]byte, accounts []
 }
 
 func tempDB() (string, *Database) {
+	dir, db := diskDB()
+	return dir, NewDatabase(db)
+}
+
+func diskDB() (string, *leveldb.Database) {
 	dir, err := ioutil.TempDir("", "trie-bench")
 	if err != nil {
 		panic(fmt.Sprintf("can't create temporary directory: %v", err))
@@ -1064,7 +1268,7 @@ func tempDB() (string, *Database) {
 	if err != nil {
 		panic(fmt.Sprintf("can't create temporary database: %v", err))
 	}
-	return dir, NewDatabase(diskdb)
+	return dir, diskdb
 }
 
 func getString(trie *Trie, k string) []byte {
