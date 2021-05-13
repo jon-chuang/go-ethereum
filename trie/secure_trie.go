@@ -18,7 +18,6 @@ package trie
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/log"
@@ -60,8 +59,6 @@ func NewSecure(root common.Hash, db *Database) (*SecureTrie, error) {
 	if err != nil {
 		return nil, err
 	}
-	trie.cacheLock = &sync.RWMutex{}
-	trie.inProgressLock = &sync.RWMutex{}
 	return &SecureTrie{trie: *trie}, nil
 }
 

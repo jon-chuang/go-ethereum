@@ -44,7 +44,7 @@ const (
 
 	// minCache is the minimum amount of memory in megabytes to allocate to leveldb
 	// read and write caching, split half and half.
-	minCache = 16
+	minCache = 2
 
 	// minHandles is the minimum number of files handles to allocate to the open
 	// database files.
@@ -94,7 +94,7 @@ func New(file string, cache int, handles int, namespace string, readonly bool) (
 		}
 		// Set default options
 		options.OpenFilesCacheCapacity = handles
-		options.BlockCacheCapacity = cache / 2 * opt.MiB
+		options.BlockCacheCapacity = cache / 2 * opt.KiB
 		options.WriteBuffer = cache / 4 * opt.MiB // Two of these are used internally
 		if readonly {
 			options.ReadOnly = true

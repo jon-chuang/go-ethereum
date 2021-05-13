@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math/rand"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -39,7 +40,9 @@ type trieUpdateJob struct {
 	ret   chan error
 }
 
-type trieKillJob struct{}
+type trieKillJob struct {
+	synced chan struct{}
+}
 
 type asyncTrieJob interface {
 	isTrieJob()
@@ -63,15 +66,11 @@ type AsyncTrie struct {
 	// actually unhashed nodes
 	unhashed int
 
-	resolvedCache map[common.Hash]node
-	cacheLock     *sync.RWMutex
-
-	resolveInProgress map[common.Hash]struct{}
-	inProgressLock    *sync.RWMutex
+	resolvedCache ConcurrentMap
 
 	jobs chan prefetchJobWrapper
 
-	syncComplete chan struct{}
+	rootLock *sync.RWMutex
 
 	// we keep track of inserts so that
 	// we know when prefetch fails are legitimate
@@ -87,17 +86,13 @@ func NewAsync(root common.Hash, db *Database) (*AsyncTrie, error) {
 	at := AsyncTrie{
 		db: db,
 
-		resolvedCache: make(map[common.Hash]node),
-		cacheLock:     &sync.RWMutex{},
-
-		resolveInProgress: make(map[common.Hash]struct{}),
-		inProgressLock:    &sync.RWMutex{},
+		resolvedCache: NewCMap(),
 
 		jobs: make(chan prefetchJobWrapper, 256),
 
-		syncComplete: make(chan struct{}, 1),
-
 		updateDirties: make(map[string]struct{}),
+
+		rootLock: &sync.RWMutex{},
 	}
 
 	if root != (common.Hash{}) && root != emptyRoot {
@@ -105,24 +100,28 @@ func NewAsync(root common.Hash, db *Database) (*AsyncTrie, error) {
 		if err != nil {
 			return nil, err
 		}
-		at.root = rootnode
+		at.setRoot(rootnode)
 	}
 
 	go at.loop()
 	return &at, nil
 }
 
-func (t *AsyncTrie) sync() struct{} {
+func (t *AsyncTrie) sync() {
 	prefetchSuccess := make(chan error, 1)
+	synced := make(chan struct{})
 	t.jobs <- prefetchJobWrapper{
-		trieKillJob{},
+		trieKillJob{
+			synced: synced,
+		},
 		prefetchSuccess,
 	}
 	prefetchSuccess <- nil
 
-	res := <-t.syncComplete
+	<-synced
+	t.resolvedCache.Clear()
 
-	return res
+	synced <- struct{}{}
 }
 
 func (t *AsyncTrie) loop() {
@@ -130,6 +129,8 @@ func (t *AsyncTrie) loop() {
 		// We wait until the prefetch thread returns
 		// This ensures sequentiality
 		err := <-prefetchJob.prefetchSuccess
+
+		close(prefetchJob.prefetchSuccess)
 
 		if err != nil {
 			switch j := prefetchJob.job.(type) {
@@ -155,7 +156,9 @@ func (t *AsyncTrie) loop() {
 		// If prefetch was a success
 		switch j := prefetchJob.job.(type) {
 		case trieKillJob:
-			t.syncComplete <- struct{}{}
+			j.synced <- struct{}{}
+			fmt.Println("WAITING TO SYNC")
+			<-j.synced
 		case trieGetJob:
 			// This op should return immediately
 			node, err := t.TryGet(j.key)
@@ -199,8 +202,7 @@ func (t *AsyncTrie) prefetchAsyncIO(prefetchSuccess chan error, origNode node, k
 
 func (t *AsyncTrie) TryGetAsync(key []byte) chan GetReturnType {
 	prefetchSuccess := make(chan error, 1)
-
-	go t.prefetchAsyncIO(prefetchSuccess, t.root, key)
+	go t.prefetchAsyncIO(prefetchSuccess, t.getRoot(), key)
 
 	ret := make(chan GetReturnType, 1)
 
@@ -214,8 +216,7 @@ func (t *AsyncTrie) TryGetAsync(key []byte) chan GetReturnType {
 
 func (t *AsyncTrie) TryUpdateAsync(key []byte, value []byte) chan error {
 	prefetchSuccess := make(chan error, 1)
-
-	go t.prefetchAsyncIO(prefetchSuccess, t.root, key)
+	go t.prefetchAsyncIO(prefetchSuccess, t.getRoot(), key)
 
 	ret := make(chan error, 1)
 
@@ -281,52 +282,39 @@ func (t *AsyncTrie) prefetchConcurrent(origNode node, key []byte, pos int) error
 		if err != nil {
 			return err
 		}
-		return t.prefetchConcurrent(child, key, pos)
+		switch childNode := child.(type) {
+		case nil, valueNode, *shortNode, *fullNode, hashNode:
+			return t.prefetchConcurrent(childNode, key, pos)
+		default:
+			panic("Invalid Node")
+		}
 	default:
+		// return nil
 		panic(fmt.Sprintf("%T: invalid node: %v", origNode, origNode))
 	}
 }
 
 func (t *AsyncTrie) resolveHash(h hashNode, prefix []byte) (node, error) {
+	if rand.Intn(10000) == 0 {
+		fmt.Println("RESOLVING HASH")
+	}
 	hash := common.BytesToHash(h)
 
-	// for {
-	// 	t.inProgressLock.RLock()
-	// 	// if the hash is not being resolved, continue
-	// 	if _, ok := t.resolveInProgress[hash]; !ok {
-	// 		t.inProgressLock.RUnlock()
-	// 		break
-	// 	}
-	// 	t.inProgressLock.RUnlock()
-	// 	// time.Sleep(100 * time.Nanosecond)
-	// }
-
-	t.cacheLock.RLock()
-	if node, ok := t.resolvedCache[hash]; ok {
-		t.cacheLock.RUnlock()
+	if node, ok := t.resolvedCache.Get(hash); ok {
 		return node, nil
 	}
-	t.cacheLock.RUnlock()
 
-	// If we can't find the hash in the cache, we
-	// need to resolve by reading from trie.Database
-
-	// We have to write lock while resolving
-	// t.inProgressLock.Lock()
-	// t.resolveInProgress[hash] = struct{}{}
-	// t.inProgressLock.Unlock()
-
-	node, err := t.resolveHashInternal(h, prefix)
-
-	if err == nil {
-		t.cacheLock.Lock()
-		t.resolvedCache[hash] = node
-		t.cacheLock.Unlock()
+	shard := t.resolvedCache.GetShard(hash)
+	shard.Lock()
+	if node, ok := shard.items[hash]; ok {
+		shard.Unlock()
+		return node, nil
 	}
-
-	// t.inProgressLock.Lock()
-	// delete(t.resolveInProgress, hash)
-	// t.inProgressLock.Unlock()
+	node, err := t.resolveHashInternal(h, prefix)
+	if err == nil {
+		shard.items[hash] = node
+	}
+	shard.Unlock()
 
 	return node, err
 }
@@ -357,10 +345,23 @@ func (t *AsyncTrie) Copy() *AsyncTrie {
 
 func (t *AsyncTrie) AsTrie() *Trie {
 	return &Trie{
-		root:     t.root,
+		root:     t.getRoot(),
 		db:       t.db,
 		unhashed: t.unhashed,
 	}
+}
+
+func (t *AsyncTrie) getRoot() node {
+	t.rootLock.RLock()
+	root := t.root
+	t.rootLock.RUnlock()
+	return root
+}
+
+func (t *AsyncTrie) setRoot(n node) {
+	t.rootLock.Lock()
+	t.root = n
+	t.rootLock.Unlock()
 }
 
 // NodeIterator returns an iterator that returns nodes of the trie. Iteration starts at
@@ -373,9 +374,10 @@ func (t *AsyncTrie) NodeIterator(start []byte) NodeIterator {
 // The value bytes must not be modified by the caller.
 // If a node was not found in the database, a MissingNodeError is returned.
 func (t *AsyncTrie) TryGet(key []byte) ([]byte, error) {
-	value, newroot, didResolve, err := t.tryGet(t.root, keybytesToHex(key), 0)
+
+	value, newroot, didResolve, err := t.tryGet(t.getRoot(), keybytesToHex(key), 0)
 	if err == nil && didResolve {
-		t.root = newroot
+		t.setRoot(newroot)
 	}
 	return value, err
 }
@@ -383,12 +385,12 @@ func (t *AsyncTrie) TryGet(key []byte) ([]byte, error) {
 // TryGetNode attempts to retrieve a trie node by compact-encoded path. It is not
 // possible to use keybyte-encoding as the path might contain odd nibbles.
 func (t *AsyncTrie) TryGetNode(path []byte) ([]byte, int, error) {
-	item, newroot, resolved, err := t.tryGetNode(t.root, compactToHex(path), 0)
+	item, newroot, resolved, err := t.tryGetNode(t.getRoot(), compactToHex(path), 0)
 	if err != nil {
 		return nil, resolved, err
 	}
 	if resolved > 0 {
-		t.root = newroot
+		t.setRoot(newroot)
 	}
 	if item == nil {
 		return nil, resolved, nil
@@ -481,17 +483,17 @@ func (t *AsyncTrie) TryUpdate(key, value []byte) error {
 	t.unhashed++
 	k := keybytesToHex(key)
 	if len(value) != 0 {
-		_, n, err := t.insert(t.root, nil, k, valueNode(value))
+		_, n, err := t.insert(t.getRoot(), nil, k, valueNode(value))
 		if err != nil {
 			return err
 		}
-		t.root = n
+		t.setRoot(n)
 	} else {
-		_, n, err := t.delete(t.root, nil, k)
+		_, n, err := t.delete(t.getRoot(), nil, k)
 		if err != nil {
 			return err
 		}
-		t.root = n
+		t.setRoot(n)
 	}
 
 	return nil
@@ -579,11 +581,11 @@ func (t *AsyncTrie) Delete(key []byte) {
 func (t *AsyncTrie) TryDelete(key []byte) error {
 	t.unhashed++
 	k := keybytesToHex(key)
-	_, n, err := t.delete(t.root, nil, k)
+	_, n, err := t.delete(t.getRoot(), nil, k)
 	if err != nil {
 		return err
 	}
-	t.root = n
+	t.setRoot(n)
 	return nil
 }
 
@@ -710,7 +712,7 @@ func (t *AsyncTrie) resolve(n node, prefix []byte) (node, error) {
 // database and can be used even if the trie doesn't have one.
 func (t *AsyncTrie) Hash() common.Hash {
 	hash, cached, _ := t.hashRoot()
-	t.root = cached
+	t.setRoot(cached)
 	return common.BytesToHash(hash.(hashNode))
 }
 
@@ -720,7 +722,8 @@ func (t *AsyncTrie) Commit(onleaf LeafCallback) (root common.Hash, err error) {
 	if t.db == nil {
 		panic("commit called on trie with nil database")
 	}
-	if t.root == nil {
+	t.sync()
+	if t.getRoot() == nil {
 		return emptyRoot, nil
 	}
 	// Derive the hash for all dirty nodes first. We hold the assumption
@@ -732,7 +735,7 @@ func (t *AsyncTrie) Commit(onleaf LeafCallback) (root common.Hash, err error) {
 	// Do a quick check if we really need to commit, before we spin
 	// up goroutines. This can happen e.g. if we load a trie for reading storage
 	// values, but don't write to it.
-	if _, dirty := t.root.cache(); !dirty {
+	if _, dirty := t.getRoot().cache(); !dirty {
 		return rootHash, nil
 	}
 	var wg sync.WaitGroup
@@ -746,7 +749,7 @@ func (t *AsyncTrie) Commit(onleaf LeafCallback) (root common.Hash, err error) {
 		}()
 	}
 	var newRoot hashNode
-	newRoot, err = h.Commit(t.root, t.db)
+	newRoot, err = h.Commit(t.getRoot(), t.db)
 	if onleaf != nil {
 		// The leafch is created in newCommitter if there was an onleaf callback
 		// provided. The commitLoop only _reads_ from it, and the commit
@@ -758,26 +761,26 @@ func (t *AsyncTrie) Commit(onleaf LeafCallback) (root common.Hash, err error) {
 	if err != nil {
 		return common.Hash{}, err
 	}
-	t.root = newRoot
+	t.setRoot(newRoot)
 	return rootHash, nil
 }
 
 // hashRoot calculates the root hash of the given trie
 func (t *AsyncTrie) hashRoot() (node, node, error) {
-	if t.root == nil {
+	if t.getRoot() == nil {
 		return hashNode(emptyRoot.Bytes()), nil, nil
 	}
 	// If the number of changes is below 100, we let one thread handle it
 	h := newHasher(t.unhashed >= 100)
 	defer returnHasherToPool(h)
-	hashed, cached := h.hash(t.root, true)
+	hashed, cached := h.hash(t.getRoot(), true)
 	t.unhashed = 0
 	return hashed, cached, nil
 }
 
 // Reset drops the referenced root node and cleans all internal state.
 func (t *AsyncTrie) Reset() {
-	t.root = nil
+	t.setRoot(nil)
 	t.unhashed = 0
 }
 
@@ -797,7 +800,7 @@ func (t *AsyncTrie) Prove(key []byte, fromLevel uint, proofDb ethdb.KeyValueWrit
 	// Collect all nodes on the path to key.
 	key = keybytesToHex(key)
 	var nodes []node
-	tn := t.root
+	tn := t.getRoot()
 	for len(key) > 0 && tn != nil {
 		switch n := tn.(type) {
 		case *shortNode:

@@ -27,6 +27,7 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"sync"
 	"testing"
 	"testing/quick"
 
@@ -477,8 +478,8 @@ func TestRandom(t *testing.T) {
 	}
 }
 
-func BenchmarkGet(b *testing.B)   { benchGet(b, false) }
-func BenchmarkGetDB(b *testing.B) { benchGet(b, true) }
+func BenchmarkGet(b *testing.B)   { benchGet(b) }
+func BenchmarkGetDB(b *testing.B) { benchGetDB(b) }
 
 func BenchmarkGetDBAsync(b *testing.B) { benchGetAsync(b, false) }
 
@@ -486,9 +487,12 @@ func BenchmarkGetDBAsyncPrefetch(b *testing.B) { benchGetAsync(b, true) }
 func BenchmarkUpdateBE(b *testing.B)           { benchUpdate(b, binary.BigEndian) }
 func BenchmarkUpdateLE(b *testing.B)           { benchUpdate(b, binary.LittleEndian) }
 
-const benchElemCount = 2000000
+const benchElemCount = 200000
+const elemSize = 256 // in bytes
 
 var hashKeyBuf = make([]byte, common.HashLength)
+
+var doOnce sync.Once
 
 func hashKey(key []byte) []byte {
 	h := newHasher(false)
@@ -499,20 +503,56 @@ func hashKey(key []byte) []byte {
 	return hashKeyBuf[:]
 }
 
-func benchGet(b *testing.B, commit bool) {
-	trie := new(Trie)
-	if commit {
-		_, tmpdb := tempDB()
+var _, diskdb = diskDB()
+var tmpdb = NewDatabase(diskdb)
+var hashForFilledDB *common.Hash
+
+func getFilledDB() (*common.Hash, *Database) {
+	if hashForFilledDB == nil {
+		trie := new(Trie)
 		trie, _ = New(common.Hash{}, tmpdb)
+
+		k := make([]byte, 32)
+		v := make([]byte, elemSize)
+		for i := 0; i < benchElemCount; i++ {
+			binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
+			trie.Update(hashKey(k), v)
+		}
+		hash := trie.Hash()
+		hashForFilledDB = &hash
+		trie.Commit(nil)
+		trie.db.Commit(*hashForFilledDB, true, nil)
+
 	}
+	return hashForFilledDB, NewDatabase(diskdb)
+}
+
+func cleanDB() {
+	ldb := tmpdb.diskdb.(*leveldb.Database)
+	ldb.Close()
+	os.RemoveAll(ldb.Path())
+}
+
+func benchGetDB(b *testing.B) {
+	hash, db := getFilledDB()
+	trie, _ := New(*hash, db)
+
 	k := make([]byte, 32)
-	v := make([]byte, 256)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
+		trie.Get(hashKey(k))
+	}
+	b.StopTimer()
+}
+
+func benchGet(b *testing.B) {
+	trie := new(Trie)
+	k := make([]byte, 32)
+	v := make([]byte, elemSize)
 	for i := 0; i < benchElemCount; i++ {
 		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
 		trie.Update(hashKey(k), v)
-	}
-	if commit {
-		trie.Commit(nil)
 	}
 
 	b.ResetTimer()
@@ -521,51 +561,48 @@ func benchGet(b *testing.B, commit bool) {
 		trie.Get(hashKey(k))
 	}
 	b.StopTimer()
-
-	if commit {
-		ldb := trie.db.diskdb.(*leveldb.Database)
-		ldb.Close()
-		os.RemoveAll(ldb.Path())
-	}
 }
 
 func benchGetAsync(b *testing.B, prefetch bool) {
-	trie := new(Trie)
-	_, diskdb := diskDB()
-	tmpdb := NewDatabase(diskdb)
-	trie, _ = New(common.Hash{}, tmpdb)
+
+	fmt.Print("\n\n\nNEW TEST PREFETCH\n\n\n\n\n\n")
+	hash, db := getFilledDB()
+
+	trieNew, _ := NewAsync(*hash, db)
 
 	k := make([]byte, 32)
-	v := make([]byte, 256)
-	for i := 0; i < benchElemCount; i++ {
-		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-		trie.Update(hashKey(k), v)
-	}
-	hash := trie.Hash()
-	trie.Commit(nil)
-
-	trieNew, _ := NewAsync(hash, trie.db)
-
 	if prefetch {
-		for i := 0; i < b.N; i++ {
+
+		fmt.Print("START ASYNC PREFETCH\n\n\n")
+		for i := 0; i < benchElemCount; i++ {
 			binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
 			trieNew.TryGetAsync(hashKey(k))
 		}
+
+		trieNew.sync()
+		fmt.Println("PRE-SYNCED")
 	}
-	trieNew.sync()
 
 	b.ResetTimer()
+
+	fmt.Println("start timer")
 	for i := 0; i < b.N; i++ {
 		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-		trieNew.TryGetAsync(hashKey(k))
+
+		if prefetch {
+			trieNew.TryGet(hashKey(k))
+		} else {
+			trieNew.TryGetAsync(hashKey(k))
+		}
+
+	}
+
+	if !prefetch {
+		fmt.Println("SYNCING")
+		trieNew.sync()
 	}
 	b.StopTimer()
 
-	trieNew.sync()
-
-	ldb := trie.db.diskdb.(*leveldb.Database)
-	ldb.Close()
-	os.RemoveAll(ldb.Path())
 }
 
 func benchUpdate(b *testing.B, e binary.ByteOrder) *Trie {
@@ -1264,7 +1301,7 @@ func diskDB() (string, *leveldb.Database) {
 	if err != nil {
 		panic(fmt.Sprintf("can't create temporary directory: %v", err))
 	}
-	diskdb, err := leveldb.New(dir, 256, 0, "", false)
+	diskdb, err := leveldb.New(dir, 10, 1024, "", false)
 	if err != nil {
 		panic(fmt.Sprintf("can't create temporary database: %v", err))
 	}
