@@ -483,12 +483,14 @@ func BenchmarkGetDB(b *testing.B) { benchGetDB(b) }
 
 func BenchmarkGetDBAsync(b *testing.B)              { benchGetAsync(b, false) }
 func BenchmarkGetDBAsyncPrefetchByGet(b *testing.B) { benchGetAsync(b, true) }
-func BenchmarkGetDBAsyncPrefetcher(b *testing.B)    { benchGetAsyncPrefetcher(b) }
+func BenchmarkGetDBAsyncCachedHashmap(b *testing.B) { benchGetAsyncCached(b, false) }
+func BenchmarkGetDBAsyncCachedDB(b *testing.B)      { benchGetAsyncCached(b, true) }
 
 func BenchmarkUpdateBE(b *testing.B) { benchUpdate(b, binary.BigEndian) }
 func BenchmarkUpdateLE(b *testing.B) { benchUpdate(b, binary.LittleEndian) }
 
-const benchElemCount = 800000
+const benchElemCount = 10_000_000
+const maxBenchGetCount = 1_000_000
 const elemSize = 256 // in bytes
 
 var hashKeyBuf = make([]byte, common.HashLength)
@@ -518,12 +520,16 @@ var hashForFilledDB *common.Hash
 
 func getFilledDB() (*common.Hash, *Database) {
 	if hashForFilledDB == nil {
-		trie := new(Trie)
-		trie, _ = New(common.Hash{}, tmpdb)
+		trie, _ := NewAsync(common.Hash{}, tmpdb)
 
 		v := make([]byte, elemSize)
 		for i := 0; i < benchElemCount; i++ {
-			trie.Update(intToKey(i), v)
+			trie.TryUpdateAsync(intToKey(i), v)
+			if i%200000 == 0 {
+				fmt.Println("COMMITING")
+				trie.Commit(nil)
+				trie.db.Commit(trie.Hash(), true, nil)
+			}
 		}
 		hash := trie.Hash()
 		hashForFilledDB = &hash
@@ -571,7 +577,13 @@ func benchGetAsync(b *testing.B, prefetch bool) {
 	trieNew, _ := NewAsync(*hash, db)
 
 	if prefetch {
-		for i := 0; i < benchElemCount; i++ {
+		var number int
+		if benchElemCount < maxBenchGetCount {
+			number = benchElemCount
+		} else {
+			number = maxBenchGetCount
+		}
+		for i := 0; i < number; i++ {
 			trieNew.TryGetAsync(intToKey(i))
 		}
 		trieNew.sync(true)
@@ -598,16 +610,32 @@ func benchGetAsync(b *testing.B, prefetch bool) {
 
 }
 
-func benchGetAsyncPrefetcher(b *testing.B) {
+func benchGetAsyncCached(b *testing.B, relyOnDatabaseCache bool) {
+	var hash *common.Hash
+	var db *Database
 
-	hash, db := getFilledDB()
+	if !relyOnDatabaseCache {
+		hash, db = getFilledDB()
+	} else {
+		hash, db = hashForFilledDB, NewDatabaseWithConfig(diskdb, &Config{
+			Cache:     350,
+			Journal:   "",
+			Preimages: true,
+		})
+	}
 
 	trieNew, _ := NewAsync(*hash, db)
 
-	for i := 0; i < benchElemCount; i++ {
+	var number int
+	if benchElemCount < maxBenchGetCount {
+		number = benchElemCount
+	} else {
+		number = maxBenchGetCount
+	}
+	for i := 0; i < number; i++ {
 		trieNew.PrefetchAsync(intToKey(i))
 	}
-	trieNew.sync(false)
+	trieNew.sync(!relyOnDatabaseCache)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

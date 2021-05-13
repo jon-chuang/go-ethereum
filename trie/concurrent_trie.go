@@ -92,7 +92,7 @@ func NewAsync(root common.Hash, db *Database) (*AsyncTrie, error) {
 
 		resolvedCache: NewCMap(),
 
-		jobs: make(chan prefetchJobWrapper, 256),
+		jobs: make(chan prefetchJobWrapper, 16),
 
 		updateDirties: make(map[string]struct{}),
 
@@ -128,6 +128,7 @@ func (t *AsyncTrie) sync(clearCache bool) {
 	if clearCache {
 		t.resolvedCache.Clear()
 	}
+	fmt.Println("SYNC DONE")
 
 	synced <- struct{}{}
 }
