@@ -1,0 +1,183 @@
+goos: linux
+goarch: amd64
+pkg: github.com/ethereum/go-ethereum/trie
+BenchmarkGet-16                   	 1303773	       939 ns/op
+Persisted trie from memory database nodes 275353 size 73.47 MiB time 1.422527731s gcnodes 0 gcsize 0.00 B gctime 0s livenodes 1 livesize 0.00 B
+BenchmarkGetDB-16                 	    6444	    179864 ns/op
+
+
+
+NEW TEST PREFETCH
+
+
+
+
+
+HASH IS RESOLVING FROM DISK: 0xab61538136a0cf908d795a822c922f8c8c6d766eef3cf8fc23a91c272eb8aea6
+start timer
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0x63bb6d92b23becf93e48e4404a834edbb824c8875edf0846c64115918828a065
+JOB: 1
+SYNCING
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0x31bf80f07dda87c062cd56e294227d4f8286d7a03386eb61356fbe2deca0eb68
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0x75bab3457d1bdf96a7a564d1207f834de52156cb80e8412561ad27d6401ece81
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0xfa4b1b991cc0c36309b8be3891b083032df5a948e8f1eaee5143e0f2d97a1033
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0x07a9bb90cdbeeba999998353e416d48516b2b1d3614d2ab483c3b374c402678f
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+prefetch returning (VALUE NODE) ID 0
+Prefetch for job completed:  0
+JOB: 1 PREFETCH SUCCESS!!!
+Prefetching key for job  1 [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0x63bb6d92b23becf93e48e4404a834edbb824c8875edf0846c64115918828a065
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0x31bf80f07dda87c062cd56e294227d4f8286d7a03386eb61356fbe2deca0eb68
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0x75bab3457d1bdf96a7a564d1207f834de52156cb80e8412561ad27d6401ece81
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0xfa4b1b991cc0c36309b8be3891b083032df5a948e8f1eaee5143e0f2d97a1033
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0x07a9bb90cdbeeba999998353e416d48516b2b1d3614d2ab483c3b374c402678f
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+(Prefetched 2) Resolving
+getting key:      [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+JOB: 2
+JOB: 2 PREFETCH SUCCESS!!!
+WAITING TO SYNC @ job 2
+SYNCed
+end timer
+-----
+BenchmarkGetDBAsync-16            	
+
+
+NEW TEST PREFETCH
+
+
+
+
+
+HASH IS RESOLVING FROM DISK: 0xab61538136a0cf908d795a822c922f8c8c6d766eef3cf8fc23a91c272eb8aea6
+start timer
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0x63bb6d92b23becf93e48e4404a834edbb824c8875edf0846c64115918828a065
+JOB: 1
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0x31bf80f07dda87c062cd56e294227d4f8286d7a03386eb61356fbe2deca0eb68
+HASH IS RESOLVING FROM DISK: 0xa38c930e14b14fae98d057f7769976e7b86c4b7c13cdfcf5dde0f8c49e428e30
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0x75bab3457d1bdf96a7a564d1207f834de52156cb80e8412561ad27d6401ece81
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+HASH IS RESOLVING FROM DISK: 0xfa4b1b991cc0c36309b8be3891b083032df5a948e8f1eaee5143e0f2d97a1033
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+HASH IS RESOLVING FROM DISK: 0xd19bfe617e2a9e7434f564d8500cab02e73538dfc47cc625f7673eff022a5d8a
+HASH IS RESOLVING FROM DISK: 0x07a9bb90cdbeeba999998353e416d48516b2b1d3614d2ab483c3b374c402678f
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+HASH IS RESOLVING FROM DISK: 0x10243f1c4985918b2833e3b57690c68f2c7acddd1644e94cdd6d35565cec1958
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+ID: 0. Prefetching ASYNC key: [2 9 0 13 14 12 13 9 5 4 8 11 6 2 10 8 13 6 0 3 4 5 10 9 8 8 3 8 6 15 12 8 4 11 10 6 11 12 9 5 4 8 4 0 0 8 15 6 3 6 2 15 9 3 1 6 0 14 15 3 14 5 6 3 16]
+prefetch returning (VALUE NODE) ID 0
+Prefetch for job completed:  0
+JOB: 1 PREFETCH SUCCESS!!!
+Prefetching key for job  1 [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0xa38c930e14b14fae98d057f7769976e7b86c4b7c13cdfcf5dde0f8c49e428e30
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0xd19bfe617e2a9e7434f564d8500cab02e73538dfc47cc625f7673eff022a5d8a
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+HASH IS RESOLVING FROM DISK: 0x2405337c11ac3fad87569f52424947d6f58d6332115f303130f6d0ca99e19e94
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0x10243f1c4985918b2833e3b57690c68f2c7acddd1644e94cdd6d35565cec1958
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0x2405337c11ac3fad87569f52424947d6f58d6332115f303130f6d0ca99e19e94
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+HASH IS RESOLVING FROM DISK: 0x638e0362b3336a7e6f4479182baef7a966809910d352ccb79b5db2786fca46aa
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+ID: 1. Prefetching ASYNC key: [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+prefetch returning (VALUE NODE) ID 1
+Prefetch for job completed:  1
+(Prefetched 0) HASH WAS RESOLVED FROM CACHE: 0x638e0362b3336a7e6f4479182baef7a966809910d352ccb79b5db2786fca46aa
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+JOB: 2
+JOB: 2 PREFETCH SUCCESS!!!
+Prefetching key for job  2 [4 8 0 7 8 12 15 14 13 5 6 3 3 9 14 10 5 4 9 6 2 14 7 2 12 3 7 12 7 15 5 8 8 15 12 4 15 8 14 5 11 12 1 7 3 8 2 7 11 10 7 5 12 11 1 0 10 6 3 10 9 6 10 5 16]
+(Prefetched 2) Resolving
+getting key:      [3 4 0 13 13 6 3 0 10 13 2 1 11 15 0 1 0 11 4 14 6 7 6 13 11 15 10 9 11 10 9 10 0 2 1 7 5 2 6 2 13 1 15 10 3 5 6 2 3 2 12 15 13 14 6 12 11 5 11 4 7 14 15 2 16]
+(Prefetched 2) Resolving
+getting key:      [3 4 0 13 13 6 3 0 10 13 2 1 11 15 0 1 0 11 4 14 6 7 6 13 11 15 10 9 11 10 9 10 0 2 1 7 5 2 6 2 13 1 15 10 3 5 6 2 3 2 12 15 13 14 6 12 11 5 11 4 7 14 15 2 16]
+(Prefetch) HASH IS RESOLVING FROM DISK: 0x135cdeeb7fd631230fd841b694451f3c12da6115a46544f47af2d76684577ecd
+ID: 2. Prefetching ASYNC key: [3 4 0 13 13 6 3 0 10 13 2 1 11 15 0 1 0 11 4 14 6 7 6 13 11 15 10 9 11 10 9 10 0 2 1 7 5 2 6 2 13 1 15 10 3 5 6 2 3 2 12 15 13 14 6 12 11 5 11 4 7 14 15 2 16]
+ID: 2. Prefetching ASYNC key: [3 4 0 13 13 6 3 0 10 13 2 1 11 15 0 1 0 11 4 14 6 7 6 13 11 15 10 9 11 10 9 10 0 2 1 7 5 2 6 2 13 1 15 10 3 5 6 2 3 2 12 15 13 14 6 12 11 5 11 4 7 14 15 2 16]
+panic: GET DISK NOT EXPECTED OR ALLOWED: hash - 0x135cdeeb7fd631230fd841b694451f3c12da6115a46544f47af2d76684577ecd, <nil>, false
+
+goroutine 35 [running]:
+github.com/ethereum/go-ethereum/trie.(*AsyncTrie).resolveHashPrefetched(0xc006ffa2a0, 0xc000356560, 0x20, 0x20, 0xc00026a050, 0x1, 0x41, 0x0, 0x7fd50afafbb8, 0x8, ...)
+	/home/jonch/Desktop/Programming/blockchain/go-ethereum/trie/concurrent_trie.go:417 +0x88c
+github.com/ethereum/go-ethereum/trie.(*AsyncTrie).tryGet(0xc006ffa2a0, 0x821300, 0xc001d568a0, 0xc00026a050, 0x41, 0x41, 0x1, 0x0, 0x431cd1, 0x7c4308, ...)
+	/home/jonch/Desktop/Programming/blockchain/go-ethereum/trie/concurrent_trie.go:306 +0x297
+github.com/ethereum/go-ethereum/trie.(*AsyncTrie).tryGet(0xc006ffa2a0, 0x821000, 0xc000266500, 0xc00026a050, 0x41, 0x41, 0x0, 0xc00011c400, 0xb7, 0x100, ...)
+	/home/jonch/Desktop/Programming/blockchain/go-ethereum/trie/concurrent_trie.go:296 +0x83c
+github.com/ethereum/go-ethereum/trie.(*AsyncTrie).TryGet(0xc006ffa2a0, 0xc00001a700, 0x20, 0x20, 0x3, 0xb7, 0x0, 0x0, 0x0)
+	/home/jonch/Desktop/Programming/blockchain/go-ethereum/trie/concurrent_trie.go:268 +0xa8
+github.com/ethereum/go-ethereum/trie.(*AsyncTrie).loop(0xc006ffa2a0)
+	/home/jonch/Desktop/Programming/blockchain/go-ethereum/trie/concurrent_trie.go:189 +0x5e3
+created by github.com/ethereum/go-ethereum/trie.NewAsync
+	/home/jonch/Desktop/Programming/blockchain/go-ethereum/trie/concurrent_trie.go:109 +0x223
+exit status 2
+FAIL	github.com/ethereum/go-ethereum/trie	8.955s

@@ -481,13 +481,14 @@ func TestRandom(t *testing.T) {
 func BenchmarkGet(b *testing.B)   { benchGet(b) }
 func BenchmarkGetDB(b *testing.B) { benchGetDB(b) }
 
-func BenchmarkGetDBAsync(b *testing.B) { benchGetAsync(b, false) }
+func BenchmarkGetDBAsync(b *testing.B)              { benchGetAsync(b, false) }
+func BenchmarkGetDBAsyncPrefetchByGet(b *testing.B) { benchGetAsync(b, true) }
+func BenchmarkGetDBAsyncPrefetcher(b *testing.B)    { benchGetAsyncPrefetcher(b) }
 
-func BenchmarkGetDBAsyncPrefetch(b *testing.B) { benchGetAsync(b, true) }
-func BenchmarkUpdateBE(b *testing.B)           { benchUpdate(b, binary.BigEndian) }
-func BenchmarkUpdateLE(b *testing.B)           { benchUpdate(b, binary.LittleEndian) }
+func BenchmarkUpdateBE(b *testing.B) { benchUpdate(b, binary.BigEndian) }
+func BenchmarkUpdateLE(b *testing.B) { benchUpdate(b, binary.LittleEndian) }
 
-const benchElemCount = 200000
+const benchElemCount = 800000
 const elemSize = 256 // in bytes
 
 var hashKeyBuf = make([]byte, common.HashLength)
@@ -503,6 +504,14 @@ func hashKey(key []byte) []byte {
 	return hashKeyBuf[:]
 }
 
+func intToKey(i int) []byte {
+	k := make([]byte, 32)
+	binary.LittleEndian.PutUint64(k, uint64(i%benchElemCount))
+	return hashKey(k)
+	// binary.LittleEndian.PutUint64(k, uint64(i*4294967296))
+	// return k
+}
+
 var _, diskdb = diskDB()
 var tmpdb = NewDatabase(diskdb)
 var hashForFilledDB *common.Hash
@@ -512,11 +521,9 @@ func getFilledDB() (*common.Hash, *Database) {
 		trie := new(Trie)
 		trie, _ = New(common.Hash{}, tmpdb)
 
-		k := make([]byte, 32)
 		v := make([]byte, elemSize)
 		for i := 0; i < benchElemCount; i++ {
-			binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-			trie.Update(hashKey(k), v)
+			trie.Update(intToKey(i), v)
 		}
 		hash := trie.Hash()
 		hashForFilledDB = &hash
@@ -537,75 +544,94 @@ func benchGetDB(b *testing.B) {
 	hash, db := getFilledDB()
 	trie, _ := New(*hash, db)
 
-	k := make([]byte, 32)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-		trie.Get(hashKey(k))
+		trie.Get(intToKey(i))
 	}
 	b.StopTimer()
 }
 
 func benchGet(b *testing.B) {
 	trie := new(Trie)
-	k := make([]byte, 32)
 	v := make([]byte, elemSize)
 	for i := 0; i < benchElemCount; i++ {
-		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-		trie.Update(hashKey(k), v)
+		trie.Update(intToKey(i), v)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-		trie.Get(hashKey(k))
+		trie.Get(intToKey(i))
 	}
 	b.StopTimer()
 }
 
 func benchGetAsync(b *testing.B, prefetch bool) {
-
-	fmt.Print("\n\n\nNEW TEST PREFETCH\n\n\n\n\n\n")
 	hash, db := getFilledDB()
 
 	trieNew, _ := NewAsync(*hash, db)
 
-	k := make([]byte, 32)
 	if prefetch {
-
-		fmt.Print("START ASYNC PREFETCH\n\n\n")
 		for i := 0; i < benchElemCount; i++ {
-			binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-			trieNew.TryGetAsync(hashKey(k))
+			trieNew.TryGetAsync(intToKey(i))
 		}
-
-		trieNew.sync()
-		fmt.Println("PRE-SYNCED")
+		trieNew.sync(true)
 	}
 
 	b.ResetTimer()
 
-	fmt.Println("start timer")
 	for i := 0; i < b.N; i++ {
-		binary.LittleEndian.PutUint64(k, uint64(i*1021435443))
-
 		if prefetch {
-			trieNew.TryGet(hashKey(k))
+			_, err := trieNew.TryGet(intToKey(i))
+			if err != nil {
+			}
 		} else {
-			trieNew.TryGetAsync(hashKey(k))
+			trieNew.TryGetAsync(intToKey(i))
 		}
 
 	}
 
 	if !prefetch {
-		fmt.Println("SYNCING")
-		trieNew.sync()
+		trieNew.sync(true)
+	}
+
+	b.StopTimer()
+
+}
+
+func benchGetAsyncPrefetcher(b *testing.B) {
+
+	hash, db := getFilledDB()
+
+	trieNew, _ := NewAsync(*hash, db)
+
+	for i := 0; i < benchElemCount; i++ {
+		trieNew.PrefetchAsync(intToKey(i))
+	}
+	trieNew.sync(false)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := trieNew.TryGet(intToKey(i))
+		if err != nil {
+		}
+
 	}
 	b.StopTimer()
 
 }
 
 func benchUpdate(b *testing.B, e binary.ByteOrder) *Trie {
+	trie := newEmpty()
+	k := make([]byte, 32)
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		e.PutUint64(k, uint64(i))
+		trie.Update(k, k)
+	}
+	return trie
+}
+
+func benchUpdateDB(b *testing.B, e binary.ByteOrder) *Trie {
 	trie := newEmpty()
 	k := make([]byte, 32)
 	b.ReportAllocs()
@@ -1231,7 +1257,7 @@ func benchmarkUpdateAndHashFixedSizedAndCommitAsync(b *testing.B, addresses [][2
 	for i := 0; i < len(addresses); i++ {
 		newTrie.TryUpdateAsync(crypto.Keccak256(addresses[i][:]), accounts[i])
 	}
-	newTrie.sync()
+	newTrie.sync(true)
 	// Insert the accounts into the trie and hash it
 
 	newTrie.Hash()
